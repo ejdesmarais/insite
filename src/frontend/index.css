@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  --eg-purple-1:    #B91D8F;
+  --eg-purple-bg-1: #FAF0F8;
+  --eg-purple-dk:   #8E1670;
+  --eg-aqua:        #007FAD;
+  --eg-aqua-2:      #8DE8F1;
+  --eg-blue-1:      #E9F6FF;
+  --eg-yellow-1:    #FEF60A;
+  --eg-grey-txt-1:  #707070;
+  --eg-grey-bg-1:   #FDFDFD;
+  --eg-grey-bg-2:   #F9F9F9;
+  --eg-grey-bg-3:   #F0F0F0;
+  --eg-border-1:    #F3F3F3;
+  --eg-border-2:    #EEEEEE;
+  --eg-border-3:    #DBDBDB;
+  --eg-shadow:      0 2px 6px rgba(0,0,0,0.1);
+}
+
+.vi-root { font-family: 'Open Sans', 'Helvetica Neue LT Pro', system-ui, sans-serif; -webkit-font-smoothing: antialiased; color: #222; }
+.vi-display { font-family: 'Open Sans', 'Helvetica Neue LT Pro', system-ui, sans-serif; letter-spacing: -0.005em; }
+.vi-mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+.vi-ai-card { position: relative; border: 1px solid var(--eg-purple-1); background: #ffffff; }
+.vi-ai-card-tint { position: relative; border: 1px solid var(--eg-purple-1); background: var(--eg-purple-bg-1); }
+.vi-brand-text { color: var(--eg-purple-1); }
+.vi-brand-bg { background: var(--eg-purple-1); }
+
+.eg-btn { background:#fff; color:#000; border:2px solid var(--eg-purple-1); letter-spacing:0.03em; transition:background .15s,color .15s; }
+.eg-btn:hover { background:var(--eg-purple-1); color:#fff; }
+.eg-btn-fill { background:var(--eg-purple-1); color:#fff; border:2px solid var(--eg-purple-1); letter-spacing:0.03em; transition:background .15s,color .15s; }
+.eg-btn-fill:hover { background:#fff; color:var(--eg-purple-1); }
+
+.vi-fade-in { animation: viFade .35s ease both; }
+@keyframes viFade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vi-fade-in { animation: none; } }

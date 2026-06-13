@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+src/backend/egain.db
+src/log-generator/logs/*/
+!src/log-generator/logs/.gitkeep
+.git
+.gitignore

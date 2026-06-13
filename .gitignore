@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+src/backend/egain.db
+src/backend/egain.db-shm
+src/backend/egain.db-wal
+src/log-generator/logs
+src/log-generator/logs/*/
+!src/log-generator/logs/.gitkeep
+.claude/

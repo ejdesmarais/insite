@@ -1,0 +1,152 @@
+{
+  "kaiser": {
+    "summary": "Kaiser Permanente has shown strong, accelerating intent over the past two weeks, with multiple IPs spanning research, product evaluation, and direct demo/pricing page visits. The progression from knowledge-base and AI agent content to explicit bottom-of-funnel actions signals an active buying cycle, not passive research. With 305,000 employees running one of the largest integrated health systems in the US, the contact center modernization opportunity here is substantial.",
+    "stage_rationale": "Classified as Evaluation because at least one visitor reached pricing and demo-request pages after a documented path through solutions and product content — the defining signal that a purchase decision is being scoped.",
+    "recommendations": [
+      {
+        "title": "Lead with AI-assisted agent workflows for clinical support",
+        "body": "Kaiser runs a massive member services operation with complex clinical and administrative inquiries. Position eGain's Agent Assist and Knowledge Hub as a way to reduce handle time on high-volume, compliance-sensitive call types — eligibility, referrals, prior auth. Their decider IP hitting the demo page is the green light to request a scoping call.",
+        "priority": "high"
+      },
+      {
+        "title": "Connect to their digital-first member experience initiative",
+        "body": "Kaiser has publicly committed to reducing member friction through digital channels. eGain's AI Agents and self-service capabilities map directly to deflecting routine inquiries from their contact center. Frame the ROI around deflection rate, not just agent productivity.",
+        "priority": "high"
+      },
+      {
+        "title": "Propose a pilot scoped to one service line",
+        "body": "An organization of Kaiser's size will not buy org-wide on a first deal. Propose a focused pilot — pharmacy support or appointment management — where measurable outcomes can be demonstrated quickly and expanded from.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "eGain + Kaiser Permanente — agent assist for member services",
+      "body": "Hi [Name],\n\nI noticed Kaiser has been exploring eGain's knowledge management and AI agent capabilities recently — including a look at our demo resources — and wanted to reach out directly.\n\nGiven the scale of Kaiser's member services operation, even a modest improvement in first-contact resolution or handle time translates to significant impact. eGain's Agent Assist and Knowledge Hub are purpose-built for exactly this kind of high-volume, compliance-sensitive environment.\n\nWould you be open to a 30-minute call to explore whether there's a fit? I can walk through how two comparable health systems have deployed eGain and what they've measured.\n\nBest,\n[Your Name]"
+    }
+  },
+  "cigna": {
+    "summary": "Cigna has maintained a consistent research cadence over the past two weeks, with multiple IPs systematically working through solutions, product, and case study content. The traffic pattern reflects a structured internal evaluation — likely a team comparing vendors — rather than casual browsing. Their focus on knowledge management and agent assist pages suggests a contact center modernization initiative is underway.",
+    "stage_rationale": "Classified as Research because visitors have explored MOFU content across product and solutions pages but have not yet reached pricing or demo-request pages — the pattern of a team gathering information before shortlisting.",
+    "recommendations": [
+      {
+        "title": "Reach out before they finalize a vendor shortlist",
+        "body": "The steady, multi-IP research pattern suggests Cigna is mid-evaluation. This is the right moment to get on their radar — before they've scored vendors and before a preferred vendor locks in the relationship. A proactive outreach tied to specific content they've reviewed will land better than a cold call.",
+        "priority": "high"
+      },
+      {
+        "title": "Highlight compliance and audit capabilities",
+        "body": "Health insurance contact centers face strict regulatory requirements around member communication. eGain's compliance-grade knowledge management and conversation tracking are differentiators that generic CCaaS platforms can't match. Lead with this angle for a regulated payer like Cigna.",
+        "priority": "high"
+      },
+      {
+        "title": "Share a case study from a comparable payer",
+        "body": "Cigna visitors have spent time on case study pages. Send a relevant case study (health insurance or large-scale contact center) as a conversation opener — it gives them something concrete to take to their internal stakeholders and establishes eGain's credibility in their segment.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "Knowledge management for Cigna's contact center — a quick introduction",
+      "body": "Hi [Name],\n\nI wanted to reach out because I've seen interest from Cigna in eGain's knowledge and agent assist capabilities, and thought it was worth a direct conversation.\n\nFor health insurance contact centers, the challenge of keeping agents current on benefits, formulary changes, and regulatory updates is one of the highest-leverage places to invest in AI. eGain's Knowledge Hub is used by several major payers to do exactly this — with measurable impact on handle time and compliance adherence.\n\nWould a brief intro call make sense? Happy to share specifics on how comparable organizations have deployed this.\n\nBest,\n[Your Name]"
+    }
+  },
+  "aetna": {
+    "summary": "Aetna was quiet for the first half of the observation window, then showed a sharp surge in activity — multiple IPs moving quickly from solutions content to product evaluation and BOFU pages. This late-surge pattern is a strong buying signal: it typically reflects an internal stakeholder getting bought in and directing a team to evaluate a specific vendor seriously. The urgency of the shift warrants immediate outreach.",
+    "stage_rationale": "Classified as Evaluation because the recent surge included visits to bottom-of-funnel pages (demo request, pricing) after an initial quiet period — the pattern of a team that has been given direction to move forward with a vendor evaluation.",
+    "recommendations": [
+      {
+        "title": "Act now — the surge indicates internal momentum",
+        "body": "Aetna's traffic went from near-zero to active evaluation in a short window. That kind of shift usually means someone internal got a mandate or saw a trigger event (competitor win, board priority, renewal decision). Reaching out within the next few days while the topic is live in their organization dramatically increases the odds of getting a meeting.",
+        "priority": "high"
+      },
+      {
+        "title": "Position eGain for their CVS Health integration context",
+        "body": "Aetna operates within CVS Health's integrated care model, which includes pharmacy, retail clinics, and insurance — all requiring coordinated member communication. eGain's omnichannel and knowledge management capabilities are well-suited to this complexity. Frame the conversation around member journey unification, not just contact center efficiency.",
+        "priority": "high"
+      },
+      {
+        "title": "Offer a rapid proof-of-value engagement",
+        "body": "When a prospect moves fast, they often have a deadline. Offer a structured 30-day proof-of-value that maps to a specific call type or member segment — something they can present internally to maintain momentum and justify moving forward.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "eGain for Aetna — following up on your recent research",
+      "body": "Hi [Name],\n\nI noticed Aetna's team has been actively researching eGain's platform recently, including a look at our demo and pricing resources, and I wanted to reach out personally.\n\nGiven Aetna's scale and the complexity of supporting members across CVS Health's integrated care network, we think there's a strong fit — particularly around agent assist and omnichannel knowledge management for high-volume, compliance-sensitive call types.\n\nWould you have 20 minutes this week or next to connect? I can share how we've worked with comparable health plans and what a typical engagement looks like.\n\nBest,\n[Your Name]"
+    }
+  },
+  "progressive": {
+    "summary": "Progressive has shown broad, multi-user engagement across their IP range — a strong signal that this is a team evaluation rather than a single researcher browsing. Visitors have spanned the funnel from awareness content to active product comparison, with one IP reaching demo and pricing pages. The insurance vertical focus and the spread of visitor roles (researchers, evaluators, a decider) paint a picture of a coordinated vendor review.",
+    "stage_rationale": "Classified as Evaluation because a decider-role IP reached bottom-of-funnel pages while other IPs simultaneously worked through product and solutions content — the pattern of a coordinated team moving toward a purchase decision.",
+    "recommendations": [
+      {
+        "title": "Identify and engage the decision-maker",
+        "body": "The IP that reached pricing and demo pages is the internal champion or the decision-maker's delegate. If you have any existing contacts at Progressive, now is the time to activate them and map the buying committee. A multi-threaded deal with both a technical evaluator and a business sponsor has significantly higher close rates.",
+        "priority": "high"
+      },
+      {
+        "title": "Lead with claims and policy contact center use cases",
+        "body": "Progressive's contact center handles a high volume of claims-related inquiries — time-sensitive, compliance-sensitive, and expensive when mishandled. eGain's Agent Assist with guided workflows and Knowledge Hub with version-controlled policy content addresses these exactly. Show them the workflow, not just the capability.",
+        "priority": "high"
+      },
+      {
+        "title": "Reference competitive displacement in insurance",
+        "body": "If Progressive is evaluating vendors, they're likely comparing eGain against a legacy platform or a point solution. Ask early in the conversation what they're currently using and where the gaps are — then position eGain's integrated knowledge and AI layer as the answer to those specific gaps.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "eGain for Progressive — connecting on your contact center evaluation",
+      "body": "Hi [Name],\n\nI wanted to reach out because several members of the Progressive team have been actively exploring eGain recently, and it looks like there may be a real fit worth exploring together.\n\nFor an insurer like Progressive, where claims handling and policy inquiries drive a significant share of contact center volume, eGain's combination of AI-powered agent assist and compliance-grade knowledge management can meaningfully reduce handle time and errors.\n\nWould you be open to a brief conversation to see if there's alignment? I'd love to share how we've worked with other P&C insurers.\n\nBest,\n[Your Name]"
+    }
+  },
+  "pnc": {
+    "summary": "PNC has been in early-funnel research mode — multiple IPs visiting blog and awareness content without progressing to product or solution pages. The traffic pattern suggests initial interest or a preliminary scan, but no clear buying signal has emerged yet. This is a nurture opportunity: get on their radar now so eGain is in the consideration set when their evaluation formally begins.",
+    "stage_rationale": "Classified as Awareness because all observed sessions accessed top-of-funnel content (blog, overview pages) with no progression to product, solutions, or BOFU pages — the pattern of an early-stage prospect building general market knowledge.",
+    "recommendations": [
+      {
+        "title": "Start a nurture sequence now",
+        "body": "PNC is still in awareness mode, which means the door is open but no urgency exists yet. A low-pressure outreach — sharing relevant content, inviting them to a webinar, or making a brief intro — keeps eGain in their peripheral vision without pushing prematurely for a sales conversation.",
+        "priority": "medium"
+      },
+      {
+        "title": "Position around banking-specific compliance and audit trails",
+        "body": "Banking contact centers face strict regulatory requirements (CFPB, OCC) around how member interactions are documented and supervised. eGain's conversation tracking and compliance-grade knowledge management are strong differentiators for regulated financial institutions. Lead with the compliance angle if you do reach out.",
+        "priority": "medium"
+      },
+      {
+        "title": "Watch for a surge — set up a follow-up alert",
+        "body": "Early-funnel accounts often flip to active evaluation when a trigger event occurs (vendor contract renewal, regulatory change, executive mandate). Check back on PNC's activity in 30 days — if their traffic spikes or shifts to product pages, that's your signal to move fast.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "eGain + PNC — thought this might be relevant to your team",
+      "body": "Hi [Name],\n\nI wanted to share a resource that's been useful for contact center leaders at financial institutions similar to PNC. We recently published a case study on how a large regional bank reduced agent handle time by 28% while improving compliance audit scores using eGain's knowledge management and AI assist platform.\n\nGiven PNC's scale and the complexity of regulatory requirements in the banking space, I thought it might be worth a look.\n\nIf you're exploring options for your contact center, I'd be happy to set up a brief call. No pressure — just happy to share what's worked for comparable organizations.\n\nBest,\n[Your Name]"
+    }
+  },
+  "spectrum": {
+    "summary": "Spectrum has been visiting eGain.com in a pattern consistent with a lurker account — frequent, lightweight visits without deep engagement. Multiple IPs appear, but sessions are short and concentrated in top-of-funnel content. This suggests casual awareness monitoring rather than an active evaluation. Spectrum is a large telecom with significant contact center infrastructure, making them a valuable long-term target worth keeping warm.",
+    "stage_rationale": "Classified as Awareness because the observed traffic consists primarily of short, top-of-funnel sessions with no progression to product, pricing, or demo content — the pattern of background market monitoring rather than active vendor evaluation.",
+    "recommendations": [
+      {
+        "title": "Focus on awareness building, not a hard push",
+        "body": "Spectrum's traffic pattern (many short visits, no BOFU engagement) suggests general market awareness rather than an active need. Aggressive outreach at this stage is likely to be ignored. Instead, focus on getting eGain content in front of the right people through targeted channels — LinkedIn, industry events, or a referral from a shared technology partner.",
+        "priority": "medium"
+      },
+      {
+        "title": "Map the contact center technology stack",
+        "body": "Spectrum (Charter Communications) operates a large call center network supporting cable, internet, and mobile subscribers. Research their current CCaaS vendor and contract timeline. Entering the conversation at contract renewal, rather than cold, dramatically improves conversion odds for a large telecom.",
+        "priority": "medium"
+      },
+      {
+        "title": "Lead with deflection and self-service ROI when timing is right",
+        "body": "Telecoms face enormous call volume on billing, troubleshooting, and service change inquiries — most of which are deflectable. When the timing is right, position eGain's AI Agents and Customer Self-Service capabilities as a path to significant cost reduction. The ROI story for telecom is strong and quantifiable.",
+        "priority": "medium"
+      }
+    ],
+    "email": {
+      "subject": "AI-powered self-service for telecom contact centers — eGain overview",
+      "body": "Hi [Name],\n\nI wanted to introduce eGain, a platform used by several major telecom providers to reduce contact center volume through AI-powered self-service and agent assist.\n\nFor a provider like Spectrum, where billing and technical support drive a large share of inbound calls, even a modest deflection improvement translates to significant cost savings. eGain's Customer Self-Service and AI Agents are designed specifically for this use case.\n\nWould it be worth a 20-minute intro call to see if there's a fit? I can share how comparable telecoms have approached this.\n\nBest,\n[Your Name]"
+    }
+  }
+}

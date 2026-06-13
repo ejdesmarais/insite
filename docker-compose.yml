@@ -1,0 +1,23 @@
+services:
+  visitor-insite:
+    build: .
+    container_name: visitor-insite
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3082:3082"
+    environment:
+      DB_PATH: /data/egain.db
+      PORT: 3082
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-5-nano}
+      OPENAI_MAX_RETRIES: ${OPENAI_MAX_RETRIES:-6}
+      OPENAI_MAX_INPUT_TOKENS: ${OPENAI_MAX_INPUT_TOKENS:-3000}
+      ENRICHMENT_PROVIDER: ${ENRICHMENT_PROVIDER:-mock}
+      KICKFIRE_API_KEY: ${KICKFIRE_API_KEY:-}
+      KICKFIRE_API_BASE_URL: ${KICKFIRE_API_BASE_URL:-https://api.kickfire.com/v3}
+      REGEN_RATE_LIMIT_ENABLED: ${REGEN_RATE_LIMIT_ENABLED:-true}
+    volumes:
+      - vi-data:/data
+
+volumes:
+  vi-data:
