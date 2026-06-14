@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Search, Sparkles, TrendingUp, TrendingDown, Building2, Users, Repeat, Flame,
   ChevronDown, ChevronRight, Globe, MapPin, Clock, FileText, Mail, RefreshCw,
-  ArrowUpRight, Eye, Download, Target, Zap, CheckCircle2,
-  LayoutDashboard, BarChart3, Settings, UserCircle2, Filter, ExternalLink,
+  ArrowUpRight, Eye, Download, Target, CheckCircle2,
+  LayoutDashboard, BarChart3, UserCircle2, Filter, ExternalLink,
   PlayCircle, Calculator, BookOpen, FileBarChart2, MousePointerClick, Copy, Menu, X
 } from "lucide-react";
+import egainLogo from "./assets/egain-logo-purple.webp";
 
 /* ------------------------------- Helpers --------------------------------- */
 
@@ -46,6 +47,64 @@ function TrendCell({ value }) {
     <span className={`vi-mono inline-flex items-center gap-1 text-xs font-semibold ${up ? "text-emerald-600" : "text-red-500"}`}>
       {up ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
       {up ? "+" : ""}{value}%
+    </span>
+  );
+}
+
+function daysSince(ts) {
+  if (!ts) return null;
+  return Math.max(0, Math.floor((Date.now() - ts) / 86400000));
+}
+
+function getSellerCue(account) {
+  const idleDays = daysSince(account.lastActivity);
+  const lateStage = account.stage === 'Evaluation' || account.stage === 'Purchase';
+
+  if (account.intent >= 75 && lateStage && account.trend >= 20) {
+    return {
+      label: "Follow up",
+      reason: "High intent rising",
+      icon: Flame,
+      level: "urgent",
+      badge: "bg-rose-50 text-rose-700 ring-rose-600/20",
+      row: "bg-rose-50/35 hover:bg-rose-50/70"
+    };
+  }
+
+  if (idleDays !== null && idleDays >= 5 && account.intent >= 65 && account.icp >= 65) {
+    return {
+      label: "Re-engage",
+      reason: `${idleDays} days idle`,
+      icon: Clock,
+      level: "attention",
+      badge: "bg-amber-50 text-amber-700 ring-amber-600/20",
+      row: "bg-amber-50/30 hover:bg-amber-50/65"
+    };
+  }
+
+  if (account.trend >= 50 && account.intent >= 55) {
+    return {
+      label: "Watch",
+      reason: "Intent rising",
+      icon: TrendingUp,
+      level: "watch",
+      badge: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+      row: "hover:bg-fuchsia-50/40"
+    };
+  }
+
+  return null;
+}
+
+function SellerCueBadge({ account, compact = false }) {
+  const cue = getSellerCue(account);
+  if (!cue) return <span className="text-xs text-slate-300">—</span>;
+  const Icon = cue.icon;
+  return (
+    <span title={cue.reason} className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold ring-1 ring-inset ${cue.badge}`}>
+      <Icon size={12} />
+      {cue.label}
+      {!compact && <span className="font-medium opacity-75">· {cue.reason}</span>}
     </span>
   );
 }
@@ -143,11 +202,8 @@ function TopNav({ active, onNav, searchQuery, onSearch, aiMode }) {
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-14 flex items-center gap-4 lg:gap-8">
         <button onClick={() => go("dashboard")} className="flex items-center gap-2.5 shrink-0">
-          <div className="w-7 h-7 rounded-lg vi-brand-bg grid place-items-center">
-            <Zap size={15} className="text-white" />
-          </div>
+          <img src={egainLogo} alt="eGain" className="h-7 w-auto shrink-0" />
           <div className="leading-none text-left">
-            <div className="vi-display text-sm font-bold text-slate-900 tracking-tight">eG<span className="vi-brand-text">ai</span>n</div>
             <div className="text-[10px] font-medium text-slate-400 tracking-wide">VISITOR IN<span className="vi-brand-text">SITE</span></div>
           </div>
         </button>
@@ -311,30 +367,34 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
           <div className="md:hidden divide-y divide-slate-100">
             {loading ? (
               [1,2,3].map(i => <div key={i} className="px-4 py-3.5"><Skeleton className="h-12" /></div>)
-            ) : filtered.map((a) => (
-              <button key={a.id} onClick={() => onOpenAccount(a.id)}
-                className="w-full text-left px-4 py-3.5 hover:bg-fuchsia-50/40 transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <span className={`w-8 h-8 rounded-md ${a.color} grid place-items-center text-white text-[10px] font-bold shrink-0`}>{a.initials}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-900 text-[13px] truncate">{a.name}</div>
-                    <div className="text-[11px] text-slate-400">{a.industry} · {a.revenue}</div>
+            ) : filtered.map((a) => {
+              const cue = getSellerCue(a);
+              return (
+                <button key={a.id} onClick={() => onOpenAccount(a.id)}
+                  className={`w-full text-left px-4 py-3.5 transition-colors ${cue?.row || 'hover:bg-fuchsia-50/40'}`}>
+                  <div className="flex items-center gap-2.5">
+                    <span className={`w-8 h-8 rounded-md ${a.color} grid place-items-center text-white text-[10px] font-bold shrink-0`}>{a.initials}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-slate-900 text-[13px] truncate">{a.name}</div>
+                      <div className="text-[11px] text-slate-400">{a.industry} · {a.revenue}</div>
+                    </div>
+                    <TrendCell value={a.trend} />
                   </div>
-                  <TrendCell value={a.trend} />
-                </div>
-                <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 mt-2.5 pl-[42px] text-[11px] text-slate-500">
-                  <span className="inline-flex items-center gap-1">ICP <ScoreBadge value={a.icp} /></span>
-                  <span className="inline-flex items-center gap-1">Intent <ScoreBadge value={a.intent} /></span>
-                  <StagePill stage={a.stage} />
-                  <span className="vi-mono">{a.visitors} visitors</span>
-                </div>
-              </button>
-            ))}
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 mt-2.5 pl-[42px] text-[11px] text-slate-500">
+                    <span className="inline-flex items-center gap-1">ICP <ScoreBadge value={a.icp} /></span>
+                    <span className="inline-flex items-center gap-1">Intent <ScoreBadge value={a.intent} /></span>
+                    <StagePill stage={a.stage} />
+                    <span className="vi-mono">{a.visitors} visitors</span>
+                    {cue && <SellerCueBadge account={a} compact />}
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* Desktop table */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-[860px] text-[13px]">
+            <table className="w-full min-w-[960px] text-[13px]">
               <thead>
                 <tr className="text-left text-[11px] uppercase tracking-wide text-slate-400 border-b border-slate-100">
                   <th className="font-semibold px-5 py-2.5">Company</th>
@@ -345,6 +405,7 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
                   <th className="font-semibold px-3 py-2.5 text-center">Intent</th>
                   <th className="font-semibold px-3 py-2.5">Stage</th>
                   <th className="font-semibold px-3 py-2.5 text-center">Visitors</th>
+                  <th className="font-semibold px-3 py-2.5">Action</th>
                   <th className="font-semibold px-5 py-2.5 text-right">Trend</th>
                 </tr>
               </thead>
@@ -353,31 +414,35 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
                   [1,2,3,4,5].map(i => (
                     <tr key={i} className="border-b border-slate-50">
                       <td className="px-5 py-3"><Skeleton className="h-9 w-48" /></td>
-                      {[1,2,3,4,5,6,7,8].map(j => <td key={j} className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>)}
+                      {[1,2,3,4,5,6,7,8,9].map(j => <td key={j} className="px-3 py-3"><Skeleton className="h-4 w-16" /></td>)}
                     </tr>
                   ))
-                ) : filtered.map((a) => (
-                  <tr key={a.id} onClick={() => onOpenAccount(a.id)}
-                    className="border-b border-slate-50 last:border-0 hover:bg-fuchsia-50/40 cursor-pointer transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className={`w-7 h-7 rounded-md ${a.color} grid place-items-center text-white text-[10px] font-bold shrink-0`}>{a.initials}</span>
-                        <div>
-                          <div className="font-semibold text-slate-900">{a.name}</div>
-                          <div className="text-[11px] text-slate-400">{a.site}</div>
+                ) : filtered.map((a) => {
+                  const cue = getSellerCue(a);
+                  return (
+                    <tr key={a.id} onClick={() => onOpenAccount(a.id)}
+                      className={`border-b border-slate-50 last:border-0 cursor-pointer transition-colors ${cue?.row || 'hover:bg-fuchsia-50/40'}`}>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <span className={`w-7 h-7 rounded-md ${a.color} grid place-items-center text-white text-[10px] font-bold shrink-0`}>{a.initials}</span>
+                          <div>
+                            <div className="font-semibold text-slate-900">{a.name}</div>
+                            <div className="text-[11px] text-slate-400">{a.site}</div>
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-3 py-3 text-slate-600">{a.industry}</td>
-                    <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.employees}</td>
-                    <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.revenue}</td>
-                    <td className="px-3 py-3 text-center"><ScoreBadge value={a.icp} /></td>
-                    <td className="px-3 py-3 text-center"><ScoreBadge value={a.intent} /></td>
-                    <td className="px-3 py-3"><StagePill stage={a.stage} /></td>
-                    <td className="px-3 py-3 text-center vi-mono text-slate-600">{a.visitors}</td>
-                    <td className="px-5 py-3 text-right"><TrendCell value={a.trend} /></td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-3 py-3 text-slate-600">{a.industry}</td>
+                      <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.employees}</td>
+                      <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.revenue}</td>
+                      <td className="px-3 py-3 text-center"><ScoreBadge value={a.icp} /></td>
+                      <td className="px-3 py-3 text-center"><ScoreBadge value={a.intent} /></td>
+                      <td className="px-3 py-3"><StagePill stage={a.stage} /></td>
+                      <td className="px-3 py-3 text-center vi-mono text-slate-600">{a.visitors}</td>
+                      <td className="px-3 py-3"><SellerCueBadge account={a} /></td>
+                      <td className="px-5 py-3 text-right"><TrendCell value={a.trend} /></td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -411,7 +476,7 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
 
 /* -------------------- Account shell (tabs) ------------------------------- */
 
-function AccountHeader({ account, tab, setTab }) {
+function AccountHeader({ account, tab, setTab, onBackToAccounts }) {
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "journey",  label: "Journey Timeline" },
@@ -422,7 +487,9 @@ function AccountHeader({ account, tab, setTab }) {
     <div className="bg-white border-b border-slate-200">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 pt-5">
         <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-4">
-          <span className="hover:text-slate-600 cursor-pointer">Accounts</span>
+          <button onClick={onBackToAccounts} className="hover:text-slate-600 cursor-pointer">
+            Accounts
+          </button>
           <ChevronRight size={12} />
           <span className="text-slate-600 font-medium">{account.name}</span>
         </div>
@@ -1213,7 +1280,7 @@ export default function VisitorIntelligence() {
 
       {nav === "accounts" && selectedAccount && (
         <>
-          <AccountHeader account={selectedAccount} tab={tab} setTab={setTab} />
+          <AccountHeader account={selectedAccount} tab={tab} setTab={setTab} onBackToAccounts={() => handleNav("dashboard")} />
           {tab === "overview" && (
             <AccountOverview
               account={selectedAccount}
