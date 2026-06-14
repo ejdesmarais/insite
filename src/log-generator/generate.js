@@ -160,20 +160,43 @@ const PAGES = {
   mofu: [
     ['/solutions/', 200, 41600],
     ['/solutions/customer-service/', 200, 44200],
-    ['/solutions/financial-services/', 200, 43100],
-    ['/solutions/telecom/', 200, 42700],
-    ['/solutions/retail/', 200, 41800],
-    ['/solutions/healthcare/', 200, 40900],
     ['/products/', 200, 48200],
     ['/products/email-management/', 200, 39800],
     ['/products/chat-and-messaging/', 200, 40300],
     ['/products/knowledge-management/', 200, 37900],
     ['/products/analytics/', 200, 38500],
+    ['/customers/', 200, 44500],
     ['/case-studies/', 200, 34600],
-    ['/case-studies/global-bank-reduces-handle-time/', 200, 52800],
-    ['/case-studies/telecom-giant-nps-improvement/', 200, 49200],
     ['/webinars/', 200, 28100],
   ],
+  industry_mofu: {
+    healthcare: [
+      ['/solutions/healthcare/', 200, 40900],
+      ['/what-is-knowledge-management-in-healthcare-providers/', 200, 46200],
+      ['/customers/', 200, 44500],
+    ],
+    health_insurance: [
+      ['/solutions/healthcare/', 200, 40900],
+      ['/what-is-knowledge-management-in-health-insurance/', 200, 45800],
+      ['/customers/', 200, 44500],
+    ],
+    insurance: [
+      ['/what-is-knowledge-management-in-insurance/', 200, 45200],
+      ['/customers/', 200, 44500],
+      ['/case-studies/', 200, 34600],
+    ],
+    banking: [
+      ['/solutions/financial-services/', 200, 43100],
+      ['/products/retail-banking-suite/', 200, 43700],
+      ['/what-is-knowledge-management-in-financial-services/', 200, 46600],
+      ['/case-studies/global-bank-reduces-handle-time/', 200, 52800],
+    ],
+    telecom: [
+      ['/solutions/telecom/', 200, 42700],
+      ['/what-is-knowledge-management-in-telco/', 200, 44900],
+      ['/case-studies/telecom-giant-nps-improvement/', 200, 49200],
+    ],
+  },
   // Bottom-of-funnel / decision
   bofu: [
     ['/pricing/', 200, 36700],
@@ -375,6 +398,32 @@ const VISITOR_ROLES = {
   xfinity:     { '73.142.51.8':     'careers',    '96.112.47.15':    'careers',    '96.112.237.100':  'careers',    '73.50.100.100':   'careers',    '96.113.100.100':  'careers'    },
 };
 
+const COMPANY_CONTENT_FIT = {
+  kaiser: 'healthcare',
+  cigna: 'health_insurance',
+  aetna: 'health_insurance',
+  progressive: 'insurance',
+  pnc: 'banking',
+  spectrum: 'telecom',
+  xfinity: 'telecom',
+};
+
+function companyPagePool(company, cluster) {
+  if (cluster !== 'mofu') return PAGES[cluster];
+
+  const industryKey = COMPANY_CONTENT_FIT[company.id];
+  const industryPages = PAGES.industry_mofu[industryKey] || [];
+  if (!industryPages.length) return PAGES.mofu;
+
+  const generalPages = PAGES.mofu;
+  const pool = weightedChoice([
+    { v: industryPages, w: 62 },
+    { v: generalPages, w: 38 },
+  ]).v;
+
+  return pool.length ? pool : generalPages;
+}
+
 // Returns the page pool key for a visitor given their role, company arc, and
 // how far through their own session history they are (0 = first visit, 1 = last).
 function visitorPagePool(role, arc, progress) {
@@ -443,7 +492,7 @@ function buildCompanySession(company, ip, role, visitTs, ipIdx, ipTotal) {
   // Progress is per-visitor (this IP's session index within its own history)
   const progress = ipTotal > 1 ? ipIdx / (ipTotal - 1) : 0.5;
   const cluster  = visitorPagePool(role, company.arc, progress);
-  const pagePool = PAGES[cluster];
+  const pagePool = companyPagePool(company, cluster);
 
   const numPages = sessionPageCount(role);
   const entries  = [];

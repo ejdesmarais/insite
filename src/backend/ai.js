@@ -1,61 +1,10 @@
 'use strict';
 
 require('dotenv').config();
-const OpenAI = require('openai');
+const { createJsonChatCompletion } = require('./adapters/openaiAdapter');
 
-// ── Lazy client — validated on first call, not at require() time ──────────────
-
-let _client;
-function getClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OPENAI_API_KEY is not set. Copy .env.template to .env and fill in your key.');
-  }
-  if (!_client) _client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  return _client;
-}
 const MODEL       = process.env.OPENAI_MODEL        || 'gpt-5-nano';
-const MAX_RETRIES = parseInt(process.env.OPENAI_MAX_RETRIES || '6', 10);
 const MAX_TOKENS  = parseInt(process.env.OPENAI_MAX_INPUT_TOKENS || '3000', 10);
-
-// ── Exponential backoff with jitter ──────────────────────────────────────────
-// Per OpenAI Cookbook best practices: retry on 429 and 5xx only; fail fast on
-// 400/401/404 (won't self-resolve). Jitter prevents thundering-herd on
-// concurrent retries.
-
-const RETRY_ON = new Set([429, 500, 502, 503, 504]);
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function withRetry(fn) {
-  const initialDelay = 1000;
-  const base         = 2;
-  const maxDelay     = 60000;
-
-  let attempt = 0;
-
-  while (true) {
-    try {
-      return await fn();
-    } catch (err) {
-      const status = err.status ?? err.response?.status;
-
-      if (!RETRY_ON.has(status) || attempt >= MAX_RETRIES) {
-        throw err;
-      }
-
-      // jitter: delay = min(base^attempt * initial, maxDelay) * (1 + random)
-      const jitter    = Math.random();
-      const delay     = Math.min(initialDelay * Math.pow(base, attempt) * (1 + jitter), maxDelay);
-      const delaySecs = (delay / 1000).toFixed(1);
-
-      console.warn(`[ai] OpenAI ${status} — retry ${attempt + 1}/${MAX_RETRIES} in ${delaySecs}s`);
-      await sleep(delay);
-      attempt++;
-    }
-  }
-}
 
 // ── Token budget: trim sessions to avoid context_length_exceeded ──────────────
 // Approximation: 4 chars ≈ 1 token. Good enough as a guard.
@@ -82,8 +31,22 @@ function trimPayload(account) {
 
 const SYSTEM_PROMPT = `You are a sales intelligence assistant for eGain, a customer service AI platform.
 Given web activity data for a prospect company, produce four pieces of structured sales intelligence.
-Be specific, concise, and grounded in the actual data provided.
-Respond ONLY with valid JSON matching the requested schema — no markdown, no explanation.`;
+
+Important distinction:
+- The summary, stage rationale, and recommendations are internal sales intelligence for an eGain seller.
+- The email is customer-facing outreach. It must read like a thoughtful human wrote it to another human.
+
+For internal sales intelligence, be specific, concise, and grounded in the actual data provided.
+
+For the customer-facing email:
+- Do not expose internal scoring, funnel labels, or CRM-style fields. Never mention Account Fit Score, Intent Score, ICP, buying stage, stage names, page view counts, visitor counts, sessions, IPs, or "BOFU/MOFU/TOFU".
+- Do not say or imply surveillance of specific web behavior. Avoid phrases like "I noticed you viewed pricing/demo/free trial pages", "your team has been actively researching us", or "given your current evaluation stage".
+- Do not assume the prospect is evaluating eGain unless the provided data explicitly supports a softer phrasing. Prefer "if your team is exploring..." or "for organizations looking at..." over "as you evaluate eGain".
+- Lead with a plausible business problem for the prospect's industry and role context, then connect eGain to that problem in plain language.
+- Keep the ask small: usually a brief conversation, sharing a relevant example, or comparing approaches. Avoid prescribing demos, trials, pricing discussions, ROI calculators, or multi-step sales motions in the first email.
+- Use natural, low-pressure language. Avoid hype, over-personalization, feature piles, and generic "Team" greetings when a contact name is unknown.
+
+Respond ONLY with valid JSON matching the requested schema - no markdown, no explanation.`;
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
@@ -95,7 +58,7 @@ Company: ${payload.name}
 Industry: ${payload.industry}
 Size: ${payload.employees} employees, ${payload.revenue} revenue
 HQ: ${payload.hq}
-ICP Score: ${payload.icp_score}/100
+Account Fit Score: ${payload.fit_score}/100
 Intent Score: ${payload.intent_score}/100
 Buying Stage: ${payload.buying_stage}
 Total Sessions: ${payload.total_sessions}
@@ -122,24 +85,28 @@ Respond with this JSON schema:
   ],
   "email": {
     "subject": "<email subject line>",
-    "body": "<full email body, personalized to the observed content and signals>"
+    "body": "<customer-facing outreach email>"
   }
 }
 
-Provide 3–4 recommendations ordered by priority.`;
+Provide 3–4 recommendations ordered by priority.
 
-  const response = await withRetry(() =>
-    getClient().chat.completions.create({
-      model: MODEL,
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user',   content: userMessage },
-      ],
-    })
-  );
+Email requirements:
+- 90–150 words.
+- Start with "Hi [Name]," unless a real contact name is provided.
+- Do not mention fit scores, intent scores, buying stages, sessions, page views, IPs, pricing-page visits, demo-page visits, free-trial interest, or other internal tracking details.
+- Do not include a "Proposed next steps" section.
+- Do not ask for a 60-minute demo, guided trial, or pricing discussion.
+- Mention at most two eGain capabilities, and only after framing the prospect's likely business problem.
+- End with one low-pressure question.`;
 
-  const raw = response.choices[0].message.content;
+  const raw = await createJsonChatCompletion({
+    model: MODEL,
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user',   content: userMessage },
+    ],
+  });
 
   try {
     return JSON.parse(raw);

@@ -10,7 +10,7 @@ const { createEnrichmentProvider } = require('./enrichment');
 // ── Page classification ───────────────────────────────────────────────────────
 
 const BOFU_PATHS   = ['/pricing/', '/demo/', '/request-a-demo/', '/contact/', '/free-trial/'];
-const MOFU_PREFIXES = ['/solutions/', '/products/', '/case-studies/', '/webinars/'];
+const MOFU_PREFIXES = ['/solutions/', '/products/', '/case-studies/', '/webinars/', '/customers/', '/what-is-knowledge-management-in-'];
 const TOFU_PREFIXES = ['/blog/', '/resources/', '/about/'];
 const ASSET_PREFIXES = ['/wp-content/', '/favicon', '/wp-json/', '/sitemap', '/robots'];
 const NOISE_PATHS  = ['/wp-login.php', '/xmlrpc.php', '/wp-admin', '/.env', '/.git', '/phpmyadmin', '/admin/', '/backup'];
@@ -49,14 +49,21 @@ const PAGE_LABELS = {
   '/solutions/telecom/':                        'Telecom Solutions',
   '/solutions/retail/':                         'Retail Solutions',
   '/solutions/healthcare/':                     'Healthcare Solutions',
+  '/products/retail-banking-suite/':            'Retail Banking Suite',
   '/products/':                                 'Products Overview',
   '/products/email-management/':                'Email Management Product',
   '/products/chat-and-messaging/':              'Chat & Messaging Product',
   '/products/knowledge-management/':            'Knowledge Management Product',
   '/products/analytics/':                       'Analytics Product',
+  '/customers/':                                'Customer Stories',
   '/case-studies/':                             'Case Studies',
   '/case-studies/global-bank-reduces-handle-time/': 'Global Bank Case Study',
   '/case-studies/telecom-giant-nps-improvement/':   'Telecom NPS Case Study',
+  '/what-is-knowledge-management-in-healthcare-providers/': 'Healthcare Knowledge Management Guide',
+  '/what-is-knowledge-management-in-health-insurance/': 'Health Insurance Knowledge Management Guide',
+  '/what-is-knowledge-management-in-insurance/': 'Insurance Knowledge Management Guide',
+  '/what-is-knowledge-management-in-financial-services/': 'Financial Services Knowledge Management Guide',
+  '/what-is-knowledge-management-in-telco/':    'Telecom Knowledge Management Guide',
   '/webinars/':                                 'Webinars',
   '/blog/ai-in-customer-service-2024/':         'AI in Customer Service Blog',
   '/blog/how-to-reduce-contact-center-costs/':  'Reducing Contact Center Costs Blog',
@@ -103,9 +110,9 @@ function sessionTitle(pages, type) {
 
 const INTEREST_PATHS = {
   'Agent Assist':        ['/solutions/customer-service/', '/products/chat-and-messaging/', '/products/email-management/', '/case-studies/global-bank-reduces-handle-time/'],
-  'Knowledge Hub':       ['/products/knowledge-management/', '/blog/knowledge-management-best-practices/'],
+  'Knowledge Hub':       ['/products/knowledge-management/', '/blog/knowledge-management-best-practices/', '/what-is-knowledge-management-in-'],
   'AI Agents':           ['/products/chat-and-messaging/', '/blog/chatbot-vs-virtual-agent/', '/blog/ai-in-customer-service-2024/'],
-  'Contact Center':      ['/solutions/', '/webinars/', '/case-studies/', '/products/analytics/'],
+  'Contact Center':      ['/solutions/', '/webinars/', '/case-studies/', '/customers/', '/products/analytics/'],
   'Customer Self-Service': ['/blog/omnichannel-cx-guide/', '/products/chat-and-messaging/'],
 };
 
@@ -383,7 +390,7 @@ async function run() {
   const upsert = getDb().prepare(`
     INSERT OR REPLACE INTO accounts
       (id, name, domain, industry, employees, revenue, hq, initials, color,
-       intent_score, icp_score, buying_stage, total_sessions, unique_ips,
+       intent_score, fit_score, buying_stage, total_sessions, unique_ips,
        last_activity, trend, interest_scores, top_pages, sessions)
     VALUES
       (?, ?, ?, ?, ?, ?, ?, ?, ?,
@@ -441,7 +448,7 @@ async function run() {
     upsert.run(
       profile.id, profile.name, profile.domain, profile.industry,
       profile.employees, profile.revenue, profile.hq, profile.initials, profile.color,
-      intentScore, profile.icp_score, buyingStage, totalSessions, uniqueIps.length,
+      intentScore, profile.fit_score, buyingStage, totalSessions, uniqueIps.length,
       lastActivity, trend,
       JSON.stringify(interestScores),
       JSON.stringify(topPages),

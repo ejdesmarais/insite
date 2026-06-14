@@ -4,7 +4,7 @@ import {
   ChevronDown, ChevronRight, Globe, MapPin, Clock, FileText, Mail, RefreshCw,
   ArrowUpRight, Eye, Download, Target, CheckCircle2,
   LayoutDashboard, BarChart3, UserCircle2, Filter, ExternalLink,
-  PlayCircle, Calculator, BookOpen, FileBarChart2, MousePointerClick, Copy, Menu, X
+  PlayCircle, Calculator, BookOpen, FileBarChart2, MousePointerClick, Copy, Menu, X, Info
 } from "lucide-react";
 import egainLogo from "./assets/egain-logo-purple.webp";
 
@@ -27,6 +27,56 @@ function ScoreBadge({ value }) {
   return (
     <span className={`vi-mono inline-flex items-center justify-center min-w-[2.6rem] px-2 py-0.5 rounded-md text-xs font-semibold ring-1 ring-inset ${scoreTone(value)}`}>
       {value}
+    </span>
+  );
+}
+
+const FIT_TOOLTIP = "Firmographic/demo-profile fit: industry, company size, revenue, and account profile. Scored from 0 to 100; 100 is the strongest fit.";
+const INTENT_TOOLTIP = "Observed website intent: page activity is weighted by funnel depth, then normalized 0-100 across identified accounts.";
+const AI_FETCH_TIMEOUT_MS = 45000;
+
+async function fetchJsonWithTimeout(url, options = {}, timeoutMs = AI_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const err = new Error(data?.detail || data?.error || `Request failed with status ${res.status}`);
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+
+    return data;
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('AI generation timed out. Please try again.');
+    }
+    throw err;
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
+function InfoTooltip({ text }) {
+  return (
+    <span className="relative inline-flex items-center group" tabIndex={0}>
+      <Info size={12} className="text-slate-300 group-hover:text-slate-500 group-focus:text-slate-500" />
+      <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 hidden w-56 -translate-x-1/2 rounded-md bg-slate-900 px-3 py-2 text-left text-[11px] font-medium leading-relaxed normal-case tracking-normal text-white shadow-lg group-hover:block group-focus:block">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+function ScoreLabel({ children, tooltip, interactive = true }) {
+  return (
+    <span title={!interactive ? tooltip : undefined} className="inline-flex items-center justify-center gap-1">
+      {children}
+      {interactive && <InfoTooltip text={tooltip} />}
     </span>
   );
 }
@@ -59,11 +109,12 @@ function daysSince(ts) {
 function getSellerCue(account) {
   const idleDays = daysSince(account.lastActivity);
   const lateStage = account.stage === 'Evaluation' || account.stage === 'Purchase';
+  const researchStage = account.stage === 'Research';
 
-  if (account.intent >= 75 && lateStage && account.trend >= 20) {
+  if (lateStage && (account.intent >= 90 || (account.intent >= 70 && account.fit >= 75))) {
     return {
       label: "Follow up",
-      reason: "High intent rising",
+      reason: account.intent >= 90 ? "Top site intent" : "Late-stage fit",
       icon: Flame,
       level: "urgent",
       badge: "bg-rose-50 text-rose-700 ring-rose-600/20",
@@ -71,25 +122,47 @@ function getSellerCue(account) {
     };
   }
 
-  if (idleDays !== null && idleDays >= 5 && account.intent >= 65 && account.icp >= 65) {
+  if (lateStage && account.fit >= 75 && (account.trend < 0 || account.intent < 70)) {
     return {
       label: "Re-engage",
-      reason: `${idleDays} days idle`,
-      icon: Clock,
+      reason: account.trend < 0 ? "Activity cooling" : "Late-stage account",
+      icon: RefreshCw,
       level: "attention",
       badge: "bg-amber-50 text-amber-700 ring-amber-600/20",
       row: "bg-amber-50/30 hover:bg-amber-50/65"
     };
   }
 
-  if (account.trend >= 50 && account.intent >= 55) {
+  if (account.trend >= 50 && account.fit >= 65) {
     return {
       label: "Watch",
-      reason: "Intent rising",
+      reason: "Activity spike",
       icon: TrendingUp,
       level: "watch",
       badge: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
       row: "hover:bg-fuchsia-50/40"
+    };
+  }
+
+  if (researchStage && account.fit >= 75 && account.visitors >= 3) {
+    return {
+      label: "Nurture",
+      reason: "High-fit research",
+      icon: BookOpen,
+      level: "nurture",
+      badge: "bg-sky-50 text-sky-700 ring-sky-600/20",
+      row: "hover:bg-sky-50/50"
+    };
+  }
+
+  if (idleDays !== null && idleDays >= 5 && account.fit >= 65) {
+    return {
+      label: "Check in",
+      reason: `No site visits ${idleDays}d`,
+      icon: Clock,
+      level: "attention",
+      badge: "bg-amber-50 text-amber-700 ring-amber-600/20",
+      row: "bg-amber-50/30 hover:bg-amber-50/65"
     };
   }
 
@@ -100,11 +173,22 @@ function SellerCueBadge({ account, compact = false }) {
   const cue = getSellerCue(account);
   if (!cue) return <span className="text-xs text-slate-300">—</span>;
   const Icon = cue.icon;
+  if (compact) {
+    return (
+      <span title={cue.reason} className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold ring-1 ring-inset ${cue.badge}`}>
+        <Icon size={12} />
+        {cue.label}
+      </span>
+    );
+  }
+
   return (
-    <span title={cue.reason} className={`inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] font-semibold ring-1 ring-inset ${cue.badge}`}>
-      <Icon size={12} />
-      {cue.label}
-      {!compact && <span className="font-medium opacity-75">· {cue.reason}</span>}
+    <span title={cue.reason} className={`inline-flex min-w-[8rem] items-start gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] ring-1 ring-inset ${cue.badge}`}>
+      <Icon size={12} className="mt-0.5 shrink-0" />
+      <span className="grid gap-0.5 leading-tight">
+        <span className="font-semibold">{cue.label}</span>
+        <span className="font-medium opacity-75">{cue.reason}</span>
+      </span>
     </span>
   );
 }
@@ -190,34 +274,29 @@ function formatRetryTime(ts) {
   return new Date(ts).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
+function hasUsableAiContent(content) {
+  return Boolean(
+    content?.summary ||
+    content?.stage_rationale ||
+    content?.recommendations?.length ||
+    content?.email?.body
+  );
+}
+
 /* ------------------------------- Top Nav --------------------------------- */
 
 function TopNav({ active, onNav, searchQuery, onSearch, aiMode }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const items = [
-    { id: "dashboard", label: "Dashboard" },
-  ];
   const go = (id) => { setMenuOpen(false); onNav(id); };
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
       <div className="max-w-[1440px] mx-auto px-4 sm:px-8 h-14 flex items-center gap-4 lg:gap-8">
-        <button onClick={() => go("dashboard")} className="flex items-center gap-2.5 shrink-0">
-          <img src={egainLogo} alt="eGain" className="h-7 w-auto shrink-0" />
+        <button onClick={() => go("dashboard")} className="flex items-center gap-2.5 shrink-0 cursor-pointer">
+          <img src={egainLogo} alt="eGain" className="h-7 w-auto shrink-0 cursor-pointer" />
           <div className="leading-none text-left">
             <div className="text-[10px] font-medium text-slate-400 tracking-wide">VISITOR IN<span className="vi-brand-text">SITE</span></div>
           </div>
         </button>
-
-        <nav className="hidden lg:flex items-center gap-1">
-          {items.map((it) => (
-            <button key={it.id} onClick={() => go(it.id)}
-              className={`px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
-                active === it.id ? "bg-fuchsia-50 text-fuchsia-800" : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
-              }`}>
-              {it.label}
-            </button>
-          ))}
-        </nav>
 
         {active === "dashboard" && (
           <div className="hidden md:block flex-1 max-w-md ml-auto">
@@ -238,30 +317,22 @@ function TopNav({ active, onNav, searchQuery, onSearch, aiMode }) {
               Demo AI seeded
             </span>
           )}
-          <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Open menu"
-            className="lg:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50">
-            {menuOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
+          {active === "dashboard" && (
+            <button onClick={() => setMenuOpen(!menuOpen)} aria-label="Open search"
+              className="md:hidden p-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-50">
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          )}
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="lg:hidden border-t border-slate-100 bg-white px-4 sm:px-8 py-3 space-y-2 vi-fade-in">
+      {menuOpen && active === "dashboard" && (
+        <div className="md:hidden border-t border-slate-100 bg-white px-4 sm:px-8 py-3 space-y-2 vi-fade-in">
           {active === "dashboard" && (
             <div className="md:hidden">
               <SearchInput value={searchQuery} onChange={onSearch} />
             </div>
           )}
-          <nav className="grid gap-1">
-            {items.map((it) => (
-              <button key={it.id} onClick={() => go(it.id)}
-                className={`text-left px-3 py-2 rounded-lg text-sm font-medium ${
-                  active === it.id ? "bg-fuchsia-50 text-fuchsia-800" : "text-slate-600 hover:bg-slate-50"
-                }`}>
-                {it.label}
-              </button>
-            ))}
-          </nav>
         </div>
       )}
     </header>
@@ -271,18 +342,24 @@ function TopNav({ active, onNav, searchQuery, onSearch, aiMode }) {
 /* --------------------------- Dashboard ----------------------------------- */
 
 const KPI_ICONS = [Building2, Flame, Repeat, TrendingUp];
-const KPI_SUBS  = ['identified this period', 'intent score ≥ 75', '2+ sessions this period', 'week-over-week activity'];
+const KPI_SUBS  = ['identified this period', 'intent score ≥ 75', 'same visitor ID, 2+ sessions', 'week-over-week activity'];
 const KPI_KEYS  = ['companiesIdentified', 'highIntentAccounts', 'repeatVisitors', 'trendingUp'];
-const KPI_LABELS = ['Companies Identified', 'High Intent Accounts', 'Repeat Visitors', 'Accounts Trending Up'];
+const KPI_LABELS = ['Companies Identified', 'High Intent Accounts', 'Repeat Activity', 'Accounts Trending Up'];
+const KPI_TOOLTIPS = [
+  'Count of identified company accounts with qualifying website activity in the current 14-day tracking window. Bot traffic, noise paths, unknown paths, and generic visitors are excluded.',
+  'Count of identified accounts whose normalized intent score is 75 or higher. Intent is based on weighted page depth: bottom-funnel pages carry the most weight, then middle-funnel, then top-funnel.',
+  'Count of visitor IDs that produced two or more sessions for an identified account during the current tracking window. Visitor IDs are IP-based, so this is a repeat-activity signal rather than confirmed person identity.',
+  'Count of identified accounts with a positive activity trend. Trend compares website hits from the most recent 7 days against the prior 7 days.'
+];
 
 function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
   const [filterIndustry, setFilterIndustry] = useState(null);
   const [filterStage,    setFilterStage]    = useState(null);
-  const [filterIcp,      setFilterIcp]      = useState(null);
+  const [filterFit,      setFilterFit]      = useState(null);
 
   const industries = [...new Set(accounts.map(a => a.industry).filter(Boolean))].sort();
   const stages     = ['Awareness', 'Research', 'Evaluation', 'Purchase'];
-  const icpBands   = ['High (75+)', 'Medium (50–74)', 'Low (<50)'];
+  const fitBands   = ['High (75+)', 'Medium (50–74)', 'Low (<50)'];
 
   const filtered = accounts.filter(a => {
     const q = (searchQuery || '').toLowerCase().trim();
@@ -292,10 +369,10 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
     }
     if (filterIndustry && a.industry !== filterIndustry) return false;
     if (filterStage    && a.stage    !== filterStage)    return false;
-    if (filterIcp) {
-      if (filterIcp === 'High (75+)'     && a.icp < 75)                    return false;
-      if (filterIcp === 'Medium (50–74)' && (a.icp < 50 || a.icp >= 75))  return false;
-      if (filterIcp === 'Low (<50)'      && a.icp >= 50)                   return false;
+    if (filterFit) {
+      if (filterFit === 'High (75+)'     && a.fit < 75)                    return false;
+      if (filterFit === 'Medium (50–74)' && (a.fit < 50 || a.fit >= 75))  return false;
+      if (filterFit === 'Low (<50)'      && a.fit >= 50)                   return false;
     }
     return true;
   });
@@ -323,7 +400,10 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
           return (
             <div key={key} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-medium text-slate-500">{KPI_LABELS[i]}</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                  {KPI_LABELS[i]}
+                  <InfoTooltip text={KPI_TOOLTIPS[i]} />
+                </span>
                 <span className="w-8 h-8 rounded-lg bg-fuchsia-50 grid place-items-center text-fuchsia-700"><Icon size={15} /></span>
               </div>
               {loading ? (
@@ -354,9 +434,9 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
             <Filter size={13} className="text-slate-400 mr-1" />
             <FilterDropdown label="Industry"     options={industries} value={filterIndustry} onChange={setFilterIndustry} />
             <FilterDropdown label="Buying Stage" options={stages}     value={filterStage}    onChange={setFilterStage}    />
-            <FilterDropdown label="ICP Fit"      options={icpBands}   value={filterIcp}      onChange={setFilterIcp}      />
-            {(filterIndustry || filterStage || filterIcp) && (
-              <button onClick={() => { setFilterIndustry(null); setFilterStage(null); setFilterIcp(null); }}
+            <FilterDropdown label="Account Fit"  options={fitBands}   value={filterFit}      onChange={setFilterFit}      />
+            {(filterIndustry || filterStage || filterFit) && (
+              <button onClick={() => { setFilterIndustry(null); setFilterStage(null); setFilterFit(null); }}
                 className="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2 ml-1">
                 Clear all
               </button>
@@ -381,8 +461,8 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
                     <TrendCell value={a.trend} />
                   </div>
                   <div className="flex items-center flex-wrap gap-x-3 gap-y-1.5 mt-2.5 pl-[42px] text-[11px] text-slate-500">
-                    <span className="inline-flex items-center gap-1">ICP <ScoreBadge value={a.icp} /></span>
-                    <span className="inline-flex items-center gap-1">Intent <ScoreBadge value={a.intent} /></span>
+                    <span className="inline-flex items-center gap-1"><ScoreLabel tooltip={FIT_TOOLTIP} interactive={false}>Fit</ScoreLabel> <ScoreBadge value={a.fit} /></span>
+                    <span className="inline-flex items-center gap-1"><ScoreLabel tooltip={INTENT_TOOLTIP} interactive={false}>Intent</ScoreLabel> <ScoreBadge value={a.intent} /></span>
                     <StagePill stage={a.stage} />
                     <span className="vi-mono">{a.visitors} visitors</span>
                     {cue && <SellerCueBadge account={a} compact />}
@@ -401,8 +481,12 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
                   <th className="font-semibold px-3 py-2.5">Industry</th>
                   <th className="font-semibold px-3 py-2.5 text-right">Employees</th>
                   <th className="font-semibold px-3 py-2.5 text-right">Revenue</th>
-                  <th className="font-semibold px-3 py-2.5 text-center">ICP</th>
-                  <th className="font-semibold px-3 py-2.5 text-center">Intent</th>
+                  <th className="font-semibold px-3 py-2.5 text-center">
+                    <ScoreLabel tooltip={FIT_TOOLTIP}>Fit</ScoreLabel>
+                  </th>
+                  <th className="font-semibold px-3 py-2.5 text-center">
+                    <ScoreLabel tooltip={INTENT_TOOLTIP}>Intent</ScoreLabel>
+                  </th>
                   <th className="font-semibold px-3 py-2.5">Stage</th>
                   <th className="font-semibold px-3 py-2.5 text-center">Visitors</th>
                   <th className="font-semibold px-3 py-2.5">Action</th>
@@ -434,7 +518,7 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
                       <td className="px-3 py-3 text-slate-600">{a.industry}</td>
                       <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.employees}</td>
                       <td className="px-3 py-3 text-right vi-mono text-slate-600">{a.revenue}</td>
-                      <td className="px-3 py-3 text-center"><ScoreBadge value={a.icp} /></td>
+                      <td className="px-3 py-3 text-center"><ScoreBadge value={a.fit} /></td>
                       <td className="px-3 py-3 text-center"><ScoreBadge value={a.intent} /></td>
                       <td className="px-3 py-3"><StagePill stage={a.stage} /></td>
                       <td className="px-3 py-3 text-center vi-mono text-slate-600">{a.visitors}</td>
@@ -478,10 +562,10 @@ function Dashboard({ accounts, kpis, insights, onOpenAccount, searchQuery }) {
 
 function AccountHeader({ account, tab, setTab, onBackToAccounts }) {
   const tabs = [
-    { id: "overview", label: "Overview" },
-    { id: "journey",  label: "Journey Timeline" },
-    { id: "intent",   label: "Intent Analysis" },
-    { id: "actions",  label: "Recommended Actions" },
+    { id: "overview", label: "Overview", icon: Eye },
+    { id: "journey",  label: "Journey Timeline", icon: Clock },
+    { id: "intent",   label: "Intent Analysis", icon: Target },
+    { id: "actions",  label: "Recommended Actions", icon: CheckCircle2 },
   ];
   return (
     <div className="bg-white border-b border-slate-200">
@@ -514,26 +598,56 @@ function AccountHeader({ account, tab, setTab, onBackToAccounts }) {
 
           <div className="flex items-center flex-wrap gap-3 shrink-0">
             <div className="text-center px-5 py-2.5 rounded-xl bg-fuchsia-50 ring-1 ring-inset ring-fuchsia-600/15">
-              <div className="vi-mono text-2xl font-semibold text-fuchsia-800 leading-none">{account.icp}</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700/80 mt-1">ICP Score</div>
+              <div className="vi-mono text-2xl font-semibold text-fuchsia-800 leading-none">{account.fit}</div>
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-700/80">
+                <ScoreLabel tooltip={FIT_TOOLTIP}>Account Fit</ScoreLabel>
+              </div>
             </div>
             <div className="text-center px-5 py-2.5 rounded-xl bg-fuchsia-50 ring-1 ring-inset ring-fuchsia-600/15">
               <div className="vi-mono text-2xl font-semibold text-fuchsia-700 leading-none">{account.intent}</div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-fuchsia-600/80 mt-1">Intent Score</div>
+              <div className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-fuchsia-600/80">
+                <ScoreLabel tooltip={INTENT_TOOLTIP}>Intent Score</ScoreLabel>
+              </div>
             </div>
           </div>
         </div>
 
-        <nav className="flex gap-5 -mb-px overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {tabs.map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)}
-              className={`pb-2.5 text-[13px] font-medium border-b-2 transition-colors shrink-0 ${
-                tab === t.id ? "border-fuchsia-700 text-fuchsia-800" : "border-transparent text-slate-500 hover:text-slate-800"
-              }`}>
-              {t.label}
-            </button>
-          ))}
-        </nav>
+        <div className="-mb-px border-t border-slate-100 pt-3 pb-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500">Account views</div>
+            <div className="rounded-full bg-fuchsia-50 px-2.5 py-1 text-[11px] font-bold text-fuchsia-800 ring-1 ring-inset ring-fuchsia-600/15">
+              4 views
+            </div>
+          </div>
+
+          <nav className="grid grid-cols-2 lg:grid-cols-[repeat(4,minmax(10.5rem,1fr))] gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 shadow-inner">
+            {tabs.map((t, idx) => {
+              const Icon = t.icon;
+              const active = tab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  aria-current={active ? "page" : undefined}
+                  className={`group flex min-h-12 items-center gap-2 rounded-lg px-2.5 py-2.5 text-left text-[12px] font-bold transition-all sm:gap-2.5 sm:px-3.5 sm:text-[13px] ${
+                    active
+                      ? "bg-white text-fuchsia-800 shadow-sm ring-1 ring-inset ring-fuchsia-600/25"
+                      : "text-slate-600 hover:bg-white/70 hover:text-slate-900"
+                  }`}
+                >
+                  <span className={`vi-mono grid h-6 w-6 place-items-center rounded-md text-[11px] font-bold ${
+                    active ? "bg-fuchsia-700 text-white" : "bg-white text-slate-500 ring-1 ring-inset ring-slate-200 group-hover:text-slate-700"
+                  }`}>
+                    {idx + 1}
+                  </span>
+                  <Icon size={16} className={active ? "text-fuchsia-700" : "text-slate-400 group-hover:text-slate-600"} />
+                  <span className="min-w-0 whitespace-normal leading-tight">{t.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
       </div>
     </div>
   );
@@ -541,7 +655,7 @@ function AccountHeader({ account, tab, setTab, onBackToAccounts }) {
 
 /* -------------------- Account Overview ----------------------------------- */
 
-function AccountOverview({ account, detail, aiContent, aiLoading, onRegenerate, regenInfo, aiMode }) {
+function AccountOverview({ account, detail, aiContent, aiLoading, onRegenerate, regenInfo, aiMode, aiError }) {
   const sessions = detail?.sessions ?? [];
   const totalSessions = detail?.totalSessions ?? account.totalSessions;
 
@@ -586,8 +700,10 @@ function AccountOverview({ account, detail, aiContent, aiLoading, onRegenerate, 
           </div>
         ) : aiContent?.summary ? (
           <p className="text-[15px] leading-[1.7] text-slate-700 max-w-4xl">{aiContent.summary}</p>
+        ) : aiError ? (
+          <p className="text-[15px] leading-[1.7] text-amber-700">{aiError}</p>
         ) : (
-          <p className="text-[15px] leading-[1.7] text-slate-500 italic">AI summary will appear here once generated.</p>
+          <p className="text-[15px] leading-[1.7] text-slate-500 italic">Generating AI summary…</p>
         )}
 
         {aiContent?.recommendations?.[0] && (
@@ -878,7 +994,7 @@ function JourneyTimeline({ detail }) {
 
 /* -------------------- Intent Analysis ------------------------------------ */
 
-function IntentAnalysis({ account, detail, aiContent, aiLoading }) {
+function IntentAnalysis({ account, detail, aiContent, aiLoading, aiError }) {
   const stages = ["Awareness", "Research", "Evaluation", "Purchase"];
   const current = account.stage;
   const interestScores = detail?.interestScores ?? {};
@@ -951,8 +1067,10 @@ function IntentAnalysis({ account, detail, aiContent, aiLoading }) {
               <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-3/4" /></div>
             ) : aiContent?.stage_rationale ? (
               <p className="text-[13px] leading-relaxed text-slate-700">{aiContent.stage_rationale}</p>
+            ) : aiError ? (
+              <p className="text-[13px] leading-relaxed text-amber-700">{aiError}</p>
             ) : (
-              <p className="text-[13px] text-slate-400 italic">Rationale will appear once AI content is generated.</p>
+              <p className="text-[13px] text-slate-400 italic">Generating rationale…</p>
             )}
           </div>
 
@@ -1020,7 +1138,7 @@ function industryAssetUrl(industry = "") {
   return "https://www.egain.com/ai-knowledge-hub/";
 }
 
-function RecommendedActions({ account, aiContent, aiLoading, onRegenerate, regenInfo, aiMode }) {
+function RecommendedActions({ account, aiContent, aiLoading, onRegenerate, regenInfo, aiMode, aiError }) {
   const [copied, setCopied] = useState(false);
   const recommendations = aiContent?.recommendations ?? [];
   const email = aiContent?.email;
@@ -1090,7 +1208,7 @@ function RecommendedActions({ account, aiContent, aiLoading, onRegenerate, regen
                 </div>
               )) : (
                 <div className="px-5 py-8 text-center text-sm text-slate-400">
-                  {aiContent ? "No recommendations available." : "Open this tab to generate AI recommendations."}
+                  {aiError || (aiContent ? "No recommendations available." : "Generating AI recommendations…")}
                 </div>
               )}
             </div>
@@ -1121,7 +1239,7 @@ function RecommendedActions({ account, aiContent, aiLoading, onRegenerate, regen
                   <div className="whitespace-pre-wrap">{email.body}</div>
                 </div>
               ) : (
-                <p className="text-sm text-slate-400 text-center py-4">Generate AI content to see a drafted outreach email.</p>
+                <p className="text-sm text-slate-400 text-center py-4">{aiError || "Generating drafted outreach email…"}</p>
               )}
             </div>
           </div>
@@ -1185,6 +1303,7 @@ export default function VisitorIntelligence() {
   const [accountDetail, setAccountDetail] = useState(null);
   const [aiContent, setAiContent]         = useState(null);
   const [aiLoading, setAiLoading]         = useState(false);
+  const [aiError, setAiError]             = useState(null);
   const [regenInfo, setRegenInfo]         = useState(null);
   const [aiMode, setAiMode]               = useState(null); // 'live' | 'simulated' | null
 
@@ -1213,6 +1332,7 @@ export default function VisitorIntelligence() {
     if (!selectedId) return;
     setAccountDetail(null);
     setAiContent(null);
+    setAiError(null);
     setRegenInfo(null);
     fetch(`/api/accounts/${selectedId}`)
       .then(r => r.json())
@@ -1220,17 +1340,44 @@ export default function VisitorIntelligence() {
       .catch(err => console.error('Failed to load account detail:', err));
   }, [selectedId]);
 
-  // AI content — load on first visit to any AI-consuming tab
+  // AI content — load automatically on first visit to any AI-consuming tab.
   useEffect(() => {
     if (!selectedId) return;
     if (!['overview', 'intent', 'actions'].includes(tab)) return;
-    if (aiContent || aiLoading) return;
-    setAiLoading(true);
-    fetch(`/api/accounts/${selectedId}/ai`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { setAiContent(data); setAiLoading(false); })
-      .catch(err => { console.error('Failed to load AI content:', err); setAiLoading(false); });
-  }, [selectedId, tab]);
+    if (hasUsableAiContent(aiContent)) return;
+    let cancelled = false;
+
+    async function loadAiContent() {
+      setAiLoading(true);
+      setAiError(null);
+      try {
+        const data = await fetchJsonWithTimeout(`/api/accounts/${selectedId}/ai`);
+
+        if (!cancelled && hasUsableAiContent(data)) {
+          setAiContent(data);
+          return;
+        }
+
+        if (!cancelled && aiMode === 'live') {
+          const regenData = await fetchJsonWithTimeout(`/api/accounts/${selectedId}/ai/regenerate`, { method: 'POST' });
+          if (hasUsableAiContent(regenData)) {
+            setAiContent(regenData);
+            return;
+          }
+        }
+
+        if (!cancelled) setAiError('AI content is not available for this account yet.');
+      } catch (err) {
+        console.error('Failed to load AI content:', err);
+        if (!cancelled) setAiError(err.message || 'AI content could not be loaded.');
+      } finally {
+        if (!cancelled) setAiLoading(false);
+      }
+    }
+
+    loadAiContent();
+    return () => { cancelled = true; };
+  }, [selectedId, tab, aiMode, aiContent]);
 
   const handleOpenAccount = (id) => {
     setSelectedId(id);
@@ -1246,17 +1393,22 @@ export default function VisitorIntelligence() {
   const handleRegenerate = async () => {
     if (!selectedId || aiLoading) return;
     setAiLoading(true);
+    setAiError(null);
     try {
-      const res = await fetch(`/api/accounts/${selectedId}/ai/regenerate`, { method: 'POST' });
-      const data = await res.json();
-      if (res.status === 429) {
-        setRegenInfo({ retryAfter: data.retry_after });
-      } else {
+      const data = await fetchJsonWithTimeout(`/api/accounts/${selectedId}/ai/regenerate`, { method: 'POST' });
+      if (hasUsableAiContent(data)) {
         setAiContent(data);
         setRegenInfo(null);
+      } else {
+        setAiError('AI content is not available for this account yet.');
       }
     } catch (err) {
       console.error('Regenerate failed:', err);
+      if (err.status === 429) {
+        setRegenInfo({ retryAfter: err.data?.retry_after });
+      } else {
+        setAiError(err.message || 'AI content could not be regenerated.');
+      }
     } finally {
       setAiLoading(false);
     }
@@ -1290,6 +1442,7 @@ export default function VisitorIntelligence() {
               onRegenerate={handleRegenerate}
               regenInfo={regenInfo}
               aiMode={aiMode}
+              aiError={aiError}
             />
           )}
           {tab === "journey" && <JourneyTimeline detail={accountDetail} />}
@@ -1299,6 +1452,7 @@ export default function VisitorIntelligence() {
               detail={accountDetail}
               aiContent={aiContent}
               aiLoading={aiLoading}
+              aiError={aiError}
             />
           )}
           {tab === "actions" && (
@@ -1309,6 +1463,7 @@ export default function VisitorIntelligence() {
               onRegenerate={handleRegenerate}
               regenInfo={regenInfo}
               aiMode={aiMode}
+              aiError={aiError}
             />
           )}
         </>

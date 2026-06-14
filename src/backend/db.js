@@ -24,7 +24,7 @@ function getDb() {
       initials        TEXT,
       color           TEXT,
       intent_score    INTEGER,
-      icp_score       INTEGER,
+      fit_score       INTEGER,
       buying_stage    TEXT,
       total_sessions  INTEGER,
       unique_ips      INTEGER,
