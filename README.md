@@ -2,6 +2,8 @@
 
 A prototype web tool that turns nginx weblog data from egain.com into sales intelligence. Sales reps open the application, see which companies have been researching eGain, and immediately know who to call, why, what to say, and how hot the lead is.
 
+If you just want to understand the app interface and navigation, start with the [User Guide](users-guide.md).
+
 ---
 
 ## Assignment Goal
